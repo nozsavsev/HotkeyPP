@@ -44,7 +44,7 @@ namespace HKPP
         return true;
     }
 
-    void Hotkey_Deskriptor::Send_Event()
+    void Hotkey_Deskriptor::Send_Event() noexcept
     {
         Hotkey_Deskriptor* temp_hotkey_descriptor = new Hotkey_Deskriptor(*this);
 

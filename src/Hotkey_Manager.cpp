@@ -19,6 +19,9 @@ using namespace HKPP::extra;
 
 namespace HKPP
 {
+    VectorEx <key_deskriptor> Hotkey_Manager::Local_Keyboard_Deskriptor = {};
+    std::mutex* Hotkey_Manager::Local_Keyboard_Deskriptor_Mutex;
+
     Hotkey_Manager* Hotkey_Manager::instance;
 
     VectorEx <Hotkey_Deskriptor> Hotkey_Manager::Combinations;
@@ -29,12 +32,20 @@ namespace HKPP
 
     std::atomic<DWORD>* Hotkey_Manager::hook_proc_thid;
 
+    VectorEx<key_deskriptor> Hotkey_Manager::GetKeyboardState()
+    {
+        Local_Keyboard_Deskriptor_Mutex->lock();
+        VectorEx<key_deskriptor> tmp = Local_Keyboard_Deskriptor;
+        Local_Keyboard_Deskriptor_Mutex->unlock();
 
+        return tmp;
+    }
 
     Hotkey_Manager::Hotkey_Manager()
     {
         comb_vec_mutex = new std::mutex;
         hook_proc_thid = new std::atomic<DWORD>;
+        Local_Keyboard_Deskriptor_Mutex = new std::mutex;
     }
 
     Hotkey_Manager* Hotkey_Manager::Get_Instance()
@@ -70,15 +81,14 @@ namespace HKPP
 
     LRESULT CALLBACK Hotkey_Manager::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
-
-        static VectorEx <key_deskriptor> Local_Keyboard_Deskriptor = {};
-
         bool repeated_input = false;
 
         bool block_input = false;
 
         if (nCode == HC_ACTION)
         {
+            Local_Keyboard_Deskriptor_Mutex->lock();
+
             KBDLLHOOKSTRUCT* kbd = (KBDLLHOOKSTRUCT*)lParam;
 
             key_deskriptor key_desk;
@@ -89,13 +99,25 @@ namespace HKPP
 
             if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
             {
-                if (!Local_Keyboard_Deskriptor.Contains(key_desk))
+                if (!Local_Keyboard_Deskriptor.Contains(key_desk.Key))
                 {
                     Local_Keyboard_Deskriptor.push_back(key_desk);  //# insert
                     Local_Keyboard_Deskriptor.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
                 }
+
                 else
+                {
                     repeated_input = true;
+
+                    Local_Keyboard_Deskriptor.foreach([&](key_deskriptor& kd) -> void
+                        {
+                            if (kd.Key == key_desk.Key)
+                            {
+                                kd = key_desk;
+                                repeated_input = false;
+                            }
+                        });
+                }
             }
 
             if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
@@ -136,11 +158,15 @@ namespace HKPP
             comb_vec_mutex->unlock();
         }
 
+        Local_Keyboard_Deskriptor_Mutex->unlock();
+
+        
         LLK_Proc_Additional_Callbacks_mutex->lock();
         {
             LLK_Proc_Additional_Callbacks.foreach([&](callback_descroptor_t& dsk) -> void { block_input |= dsk.fnc(nCode, wParam, lParam); });
         }
         LLK_Proc_Additional_Callbacks_mutex->unlock();
+
 
         if (block_input)
             return 1;

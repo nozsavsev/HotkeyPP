@@ -111,8 +111,8 @@ namespace HKPP
         void Init(VectorEx <key_deskriptor> keys_vector, DWORD th_id, bool block_input = false, bool allow_injected = false, UINT msg_arg = WM_HKPP_DEFAULT_CALLBACK_MESSAGE);
 
         bool Check_Combination(VectorEx <key_deskriptor>& KState);
-
-        void Send_Event();
+        
+        void Send_Event() noexcept;
 
     };
 
@@ -133,6 +133,8 @@ namespace HKPP
 
     protected:
 
+        static VectorEx <key_deskriptor> Local_Keyboard_Deskriptor;
+        static std::mutex* Local_Keyboard_Deskriptor_Mutex;
         static VectorEx <Hotkey_Deskriptor> Combinations;
         static std::mutex* comb_vec_mutex;
 
@@ -153,6 +155,7 @@ namespace HKPP
 
     public:
         static Hotkey_Manager* Get_Instance();
+        static VectorEx<key_deskriptor> GetKeyboardState();
 
         void HKPP_Init();
         void HKPP_Stop();
