@@ -20,19 +20,16 @@ namespace HKPP
 {
     Hotkey_Deskriptor::Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
     {
-        Init(keys_vector, set.Thread_Id, set.Block_Input, set.Allow_Injected, set.Msg);
+        Init(keys_vector, set);
     }
 
-    void Hotkey_Deskriptor::Init(VectorEx <key_deskriptor> keys_vector, DWORD th_id, bool block_input, bool allow_injected, UINT msg_arg)
+    void Hotkey_Deskriptor::Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
     {
         Key_List = keys_vector;
 
         Key_List.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
 
-        settings.Thread_Id = th_id;
-        settings.Block_Input = block_input;
-        settings.Allow_Injected = allow_injected;
-        settings.Msg = msg_arg;
+        settings = set;
     }
 
     bool Hotkey_Deskriptor::Check_Combination(VectorEx <key_deskriptor>& KState)

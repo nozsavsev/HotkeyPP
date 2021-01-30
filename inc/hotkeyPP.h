@@ -93,6 +93,7 @@ namespace HKPP
         bool Block_Input;
         bool Allow_Injected;
         UINT Msg;
+        std::string name;
     };
 
     class Hotkey_Deskriptor
@@ -108,10 +109,10 @@ namespace HKPP
         Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
 
 
-        void Init(VectorEx <key_deskriptor> keys_vector, DWORD th_id, bool block_input = false, bool allow_injected = false, UINT msg_arg = WM_HKPP_DEFAULT_CALLBACK_MESSAGE);
+        void Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
 
         bool Check_Combination(VectorEx <key_deskriptor>& KState);
-        
+
         void Send_Event() noexcept;
 
     };

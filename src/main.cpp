@@ -12,22 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+/* USAGE
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <windows.h>
-#include <stdio.h>
-#include <thread>
-#include <vector>
-#include <atomic>
-#include <mutex>
-#include <string>
-#include <algorithm>
-#include <functional>
-#include <iostream>
-#include <psapi.h>
-#include <future>
 #include "hotkeyPP.h"
-
 
 using namespace HKPP;
 using namespace HKPP::extra;
@@ -64,3 +53,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
+*/
