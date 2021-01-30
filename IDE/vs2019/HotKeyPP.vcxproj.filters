@@ -24,7 +24,7 @@
     <ClCompile Include="..\..\src\key_descriptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\main.cpp">
+    <ClCompile Include="..\..\src\example.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
