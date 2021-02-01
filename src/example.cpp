@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/* USAGE
+/*USAGE
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "hotkeyPP.h"
@@ -41,7 +41,7 @@ int main(int argc, char** argv)
             {
                 Hotkey_Deskriptor* dsk = (Hotkey_Deskriptor*)msg.lParam;
 
-                wprintf(L"pressed %s real:%s\n",dsk->settings.name.c_str(), dsk->Real ? L"true" : L"false");
+                wprintf(L"pressed \"%s\" isReal -> %s\n",dsk->settings.name.c_str(), dsk->Real ? L"true" : L"false");
 
                 delete dsk;
             }
@@ -53,4 +53,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
-*/
+//*/
