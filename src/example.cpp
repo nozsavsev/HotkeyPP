@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 
     mng->HKPP_Init();
 
-    mng->Add(HKPP::Hotkey_Deskriptor({ VK_LWIN , 'C' }, { GetCurrentThreadId(), HKPP_BLOCK_INPUT, HKPP_ALLOW_INJECTED, WM_HKPP_DEFAULT_CALLBACK_MESSAGE }));
+    mng->Add(HKPP::Hotkey_Deskriptor({ VK_LWIN , 'C' }, Hotkey_Settings_t(GetCurrentThreadId(), HKPP_BLOCK_INPUT, HKPP_ALLOW_INJECTED, WM_HKPP_DEFAULT_CALLBACK_MESSAGE,L"name") ));
 
     MSG msg;
     while (GetMessageW(&msg, NULL, NULL, NULL))
@@ -41,7 +41,7 @@ int main(int argc, char** argv)
             {
                 Hotkey_Deskriptor* dsk = (Hotkey_Deskriptor*)msg.lParam;
 
-                printf("pressed %s\n", dsk->Real ? "true" : "false");
+                wprintf(L"pressed %s real:%s\n",dsk->settings.name.c_str(), dsk->Real ? L"true" : L"false");
 
                 delete dsk;
             }

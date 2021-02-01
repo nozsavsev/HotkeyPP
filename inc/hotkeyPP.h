@@ -89,20 +89,11 @@ namespace HKPP
     class Hotkey_Settings_t
     {
     public:
-        DWORD Thread_Id;
-        bool Block_Input;
-        bool Allow_Injected;
-        UINT Msg;
-        std::wstring name;
-
-        Hotkey_Settings_t() 
-        {
-            Thread_Id = 0;
-            Block_Input = 0;
-            Allow_Injected = 0;
-            Msg = 0;
-            name = L"";
-        }
+        DWORD Thread_Id = NULL;
+        bool Block_Input = NULL;
+        bool Allow_Injected = NULL;
+        UINT Msg = NULL;
+        std::wstring name = L"";
 
         Hotkey_Settings_t(DWORD Thread_Id_, bool Block_Input_, bool Allow_Injected_, UINT Msg_, std::wstring name_)
         {
@@ -111,6 +102,15 @@ namespace HKPP
             Allow_Injected = Allow_Injected_;
             Msg = Msg_;
             name = name_;
+        }
+
+        Hotkey_Settings_t()
+        {
+            Thread_Id = NULL;
+            Block_Input = NULL;
+            Allow_Injected = NULL;
+            Msg = NULL;
+            name = L"";
         }
     };
 
