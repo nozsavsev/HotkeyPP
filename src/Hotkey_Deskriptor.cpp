@@ -18,15 +18,10 @@ using namespace HKPP::extra;
 
 namespace HKPP
 {
-    Hotkey_Deskriptor::Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
-    {
-        Init(keys_vector, set);
-    }
 
     void Hotkey_Deskriptor::Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
     {
         Key_List = keys_vector;
-
         Key_List.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
 
         settings = set;

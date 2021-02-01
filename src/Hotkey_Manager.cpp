@@ -156,11 +156,12 @@ namespace HKPP
             }
 
             comb_vec_mutex->unlock();
+
+            Local_Keyboard_Deskriptor_Mutex->unlock();
         }
 
-        Local_Keyboard_Deskriptor_Mutex->unlock();
 
-        
+
         LLK_Proc_Additional_Callbacks_mutex->lock();
         {
             LLK_Proc_Additional_Callbacks.foreach([&](callback_descroptor_t& dsk) -> void { block_input |= dsk.fnc(nCode, wParam, lParam); });
@@ -213,10 +214,10 @@ namespace HKPP
 
     bool Hotkey_Manager::Add(Hotkey_Deskriptor desk)
     {
-        comb_vec_mutex->lock();
-
-        if (!Combinations.Contains(desk))
-        {
+        //comb_vec_mutex->lock();
+        //
+        //if (!Combinations.Contains(desk))
+        //{
 
             if (desk.settings.Allow_Injected == HKPP_DENY_INJECTED)
             {
@@ -230,12 +231,12 @@ namespace HKPP
 
             Combinations.push_back(desk);
 
-            comb_vec_mutex->unlock();
+       //     comb_vec_mutex->unlock();
 
             return true;
-        }
-        else
-            comb_vec_mutex->unlock();
+       // }
+       // else
+       //     comb_vec_mutex->unlock();
 
         return false;
     }

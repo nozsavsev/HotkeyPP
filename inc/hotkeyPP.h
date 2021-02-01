@@ -86,14 +86,32 @@ namespace HKPP
         bool operator>= (DWORD& s);
     };
 
-    struct Hotkey_Settings_t
+    class Hotkey_Settings_t
     {
     public:
         DWORD Thread_Id;
         bool Block_Input;
         bool Allow_Injected;
         UINT Msg;
-        std::string name;
+        std::wstring name;
+
+        Hotkey_Settings_t() 
+        {
+            Thread_Id = 0;
+            Block_Input = 0;
+            Allow_Injected = 0;
+            Msg = 0;
+            name = L"";
+        }
+
+        Hotkey_Settings_t(DWORD Thread_Id_, bool Block_Input_, bool Allow_Injected_, UINT Msg_, std::wstring name_)
+        {
+            Thread_Id = Thread_Id_;
+            Block_Input = Block_Input_;
+            Allow_Injected = Allow_Injected_;
+            Msg = Msg_;
+            name = name_;
+        }
     };
 
     class Hotkey_Deskriptor
@@ -106,7 +124,10 @@ namespace HKPP
         bool operator!= (Hotkey_Deskriptor& s);
         bool operator== (Hotkey_Deskriptor& s);
 
-        Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
+        Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
+        {
+            Init(keys_vector, set);
+        }
 
 
         void Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
