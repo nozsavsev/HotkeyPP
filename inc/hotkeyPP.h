@@ -94,14 +94,16 @@ namespace HKPP
         bool Allow_Injected = NULL;
         UINT Msg = NULL;
         std::wstring name = L"";
+        std::function <void(void)> user_callback = {};
 
-        Hotkey_Settings_t(DWORD Thread_Id_, bool Block_Input_, bool Allow_Injected_, UINT Msg_, std::wstring name_)
+        Hotkey_Settings_t(DWORD Thread_Id_, bool Block_Input_, bool Allow_Injected_, UINT Msg_, std::wstring name_, std::function <void(void)> user_callback_)
         {
             Thread_Id = Thread_Id_;
             Block_Input = Block_Input_;
             Allow_Injected = Allow_Injected_;
             Msg = Msg_;
             name = name_;
+            user_callback = user_callback_;
         }
 
         Hotkey_Settings_t()
