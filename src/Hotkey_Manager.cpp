@@ -203,7 +203,7 @@ namespace HKPP
 
         if (!LLK_Proc_Additional_Callbacks_mutex)
             LLK_Proc_Additional_Callbacks_mutex = new std::mutex();
-    
+
         if (!hook_main_th)
             hook_main_th = new std::thread(&hook_main);
     }
