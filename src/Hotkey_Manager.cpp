@@ -58,9 +58,9 @@ namespace HKPP
 
     void Hotkey_Manager::hook_main()
     {
-
         *hook_proc_thid = GetCurrentThreadId();
 
+        printf("Setting up LL keyboard hook\n");
         HHOOK hook_handle = SetWindowsHookExW(WH_KEYBOARD_LL, Hotkey_Manager::LowLevelKeyboardProc, NULL, NULL);
         MSG msg;
 
@@ -69,6 +69,7 @@ namespace HKPP
             printf("\nHotkey_Manager::hook_main() >> %d\n", GetLastError());
             std::exit(-1);
         }
+        printf("Ready to rock!\n");
 
         while (GetMessageW(&msg, NULL, NULL, NULL))
         {
@@ -114,6 +115,7 @@ namespace HKPP
                             if (kd.Key == key_desk.Key)
                             {
                                 kd = key_desk;
+
                                 repeated_input = false;
                             }
                         });
@@ -128,6 +130,9 @@ namespace HKPP
 
             comb_vec_mutex->lock();
             {
+
+                VectorEx <Hotkey_Deskriptor> combs;
+
                 Combinations.foreach([&](Hotkey_Deskriptor& desk) -> void
                     {
 
@@ -147,11 +152,22 @@ namespace HKPP
                                             break;
                                         }
                                     }
-                                    desk.Send_Event();
+                                    combs.push_back(desk);
+                                    //desk.Send_Event();
                                 }
                                 block_input |= desk.settings.Block_Input;
                             }
                         }
+                    });
+
+                combs.foreach([&](Hotkey_Deskriptor& d) -> void
+                    {
+                        bool send = true;
+
+                        combs.foreach([&](Hotkey_Deskriptor& d_in) -> void { if (d != d_in && d.Check_Combination(d_in.Key_List)) { send = false; } });
+
+                        if (send)
+                            d.Send_Event();
                     });
             }
 
@@ -177,6 +193,7 @@ namespace HKPP
 
     void Hotkey_Manager::HKPP_Init()
     {
+        printf("starting threads\n");
         if (!hook_main_th)
             hook_main_th = new std::thread(&hook_main);
 
@@ -228,6 +245,8 @@ namespace HKPP
             {
                 desk.Key_List.foreach([&](key_deskriptor& k) -> void { k.Injected = HKPP::injected_status_enm::UNDEFINED_INJECTION_STATUS; });
             }
+
+            desk.Key_List.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
 
             Combinations.push_back(desk);
 
