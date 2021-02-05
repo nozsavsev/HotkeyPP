@@ -43,9 +43,7 @@ namespace HKPP
 
     Hotkey_Manager::Hotkey_Manager()
     {
-        comb_vec_mutex = new std::mutex;
-        hook_proc_thid = new std::atomic<DWORD>;
-        Local_Keyboard_Deskriptor_Mutex = new std::mutex;
+        this->HKPP_Init();
     }
 
     Hotkey_Manager* Hotkey_Manager::Get_Instance()
@@ -78,6 +76,7 @@ namespace HKPP
         }
 
         UnhookWindowsHookEx(hook_handle);
+        hook_proc_thid = 0;
     }
 
     LRESULT CALLBACK Hotkey_Manager::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
@@ -193,12 +192,20 @@ namespace HKPP
 
     void Hotkey_Manager::HKPP_Init()
     {
-        printf("starting threads\n");
-        if (!hook_main_th)
-            hook_main_th = new std::thread(&hook_main);
+        if (!comb_vec_mutex)
+            comb_vec_mutex = new std::mutex;
+
+        if (!hook_proc_thid)
+            hook_proc_thid = new std::atomic<DWORD>;
+
+        if (!Local_Keyboard_Deskriptor_Mutex)
+            Local_Keyboard_Deskriptor_Mutex = new std::mutex;
 
         if (!LLK_Proc_Additional_Callbacks_mutex)
             LLK_Proc_Additional_Callbacks_mutex = new std::mutex();
+    
+        if (!hook_main_th)
+            hook_main_th = new std::thread(&hook_main);
     }
 
     void Hotkey_Manager::HKPP_Stop()
