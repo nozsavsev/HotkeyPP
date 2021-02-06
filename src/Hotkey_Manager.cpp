@@ -58,7 +58,6 @@ namespace HKPP
     {
         *hook_proc_thid = GetCurrentThreadId();
 
-        printf("Setting up LL keyboard hook\n");
         HHOOK hook_handle = SetWindowsHookExW(WH_KEYBOARD_LL, Hotkey_Manager::LowLevelKeyboardProc, NULL, NULL);
         MSG msg;
 
@@ -67,7 +66,6 @@ namespace HKPP
             printf("\nHotkey_Manager::hook_main() >> %d\n", GetLastError());
             std::exit(-1);
         }
-        printf("Ready to rock!\n");
 
         while (GetMessageW(&msg, NULL, NULL, NULL))
         {
