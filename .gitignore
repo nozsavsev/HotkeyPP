@@ -3,6 +3,4 @@ IDE/vs2019/.vs
 IDE/vs2019/Release
 IDE/vs2019/Debug
 IDE/vs2019/x64
-/IDE/vs2019/Win32/Debug/HotKeyPP.lib
-/IDE/vs2019/Win32/Debug/HotKeyPP.pdb
-/IDE/vs2019/Win32/Release/HotKeyPP.lib
+/IDE/vs2019/Win32
