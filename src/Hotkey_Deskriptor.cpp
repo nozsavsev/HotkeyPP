@@ -46,14 +46,10 @@ namespace HKPP
     bool Hotkey_Deskriptor::operator== (Hotkey_Deskriptor& s)
     {
         return (
-            (this->Key_List == s.Key_List) && 
-            (this->settings.Thread_Id == s.settings.Thread_Id) && 
+            (this->Key_List == s.Key_List) &&
+            (this->settings.Thread_Id == s.settings.Thread_Id) &&
             (this->settings.Allow_Injected == s.settings.Allow_Injected)
             );
     }
-
-    bool Hotkey_Deskriptor::operator!= (Hotkey_Deskriptor& s)
-    {
-        return !operator==(s);
-    }
+    bool Hotkey_Deskriptor::operator!= (Hotkey_Deskriptor& s) { return !operator==(s); }
 }

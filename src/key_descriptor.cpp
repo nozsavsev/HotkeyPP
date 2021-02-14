@@ -36,6 +36,7 @@ namespace HKPP
         Injected = injected_status_enm::UNDEFINED_INJECTION_STATUS;
     }
 
+
     bool key_deskriptor::operator== (key_deskriptor& s)
     {
         if ((this->Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS || s.Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS)) //if we do not know injection status
@@ -43,14 +44,9 @@ namespace HKPP
         else //if we know injection status
             return ((s.Key == this->Key) && (s.Injected == this->Injected)); //full comparation
     }
+    bool key_deskriptor::operator!= (key_deskriptor& s) { return !(operator==(s)); }
 
-    bool key_deskriptor::operator!= (key_deskriptor& s)
-    {
-        if ((this->Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS || s.Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS))
-            return (s.Key != this->Key);
-        else
-            return ((s.Key != this->Key) && (s.Injected == this->Injected));
-    }
+
 
     bool key_deskriptor::operator> (key_deskriptor& s)
     {
@@ -59,14 +55,8 @@ namespace HKPP
         else
             return ((s.Key > this->Key) && (s.Injected == this->Injected));
     }
+    bool key_deskriptor::operator<  (key_deskriptor& s) { return !(operator>(s)); }
 
-    bool key_deskriptor::operator<  (key_deskriptor& s)
-    {
-        if ((this->Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS || s.Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS))
-            return (s.Key < this->Key);
-        else
-            return ((s.Key < this->Key) && (s.Injected == this->Injected));
-    }
 
     bool key_deskriptor::operator<= (key_deskriptor& s)
     {
@@ -75,20 +65,15 @@ namespace HKPP
         else
             return ((s.Key <= this->Key) && (s.Injected == this->Injected));
     }
-
-    bool key_deskriptor::operator>= (key_deskriptor& s)
-    {
-        if ((this->Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS || s.Injected == injected_status_enm::UNDEFINED_INJECTION_STATUS))
-            return (s.Key >= this->Key);
-        else
-            return ((s.Key >= this->Key) && (s.Injected == this->Injected));
-    }
+    bool key_deskriptor::operator>= (key_deskriptor& s) { return (operator<=(s)); }
 
 
     bool key_deskriptor::operator== (DWORD& s) { return (s == this->Key); }
-    bool key_deskriptor::operator!= (DWORD& s) { return (s != this->Key); }
+    bool key_deskriptor::operator!= (DWORD& s) { return !(operator==(s)); }
+
     bool key_deskriptor::operator>  (DWORD& s) { return (s > this->Key); }
-    bool key_deskriptor::operator<  (DWORD& s) { return (s < this->Key); }
+    bool key_deskriptor::operator<  (DWORD& s) { return !(operator>(s)); }
+
     bool key_deskriptor::operator<= (DWORD& s) { return (s <= this->Key); }
-    bool key_deskriptor::operator>= (DWORD& s) { return (s >= this->Key); }
+    bool key_deskriptor::operator>= (DWORD& s) { return !(operator<=(s)); }
 }

@@ -19,24 +19,24 @@ using namespace HKPP::extra;
 
 namespace HKPP
 {
-    VectorEx <key_deskriptor> Hotkey_Manager::Local_Keyboard_Deskriptor = {};
-    std::mutex* Hotkey_Manager::Local_Keyboard_Deskriptor_Mutex;
+    VectorEx <key_deskriptor> Hotkey_Manager::Keyboard_Deskriptor = {};
+    std::mutex* Hotkey_Manager::Keyboard_Deskriptor_Mutex;
 
     Hotkey_Manager* Hotkey_Manager::instance;
 
     VectorEx <Hotkey_Deskriptor> Hotkey_Manager::Combinations;
     std::mutex* Hotkey_Manager::comb_vec_mutex;
 
-    VectorEx <callback_descroptor_t> Hotkey_Manager::LLK_Proc_Additional_Callbacks;
+    VectorEx <callback_descriptor_t> Hotkey_Manager::LLK_Proc_Additional_Callbacks;
     std::mutex* Hotkey_Manager::LLK_Proc_Additional_Callbacks_mutex;
 
     std::atomic<DWORD>* Hotkey_Manager::hook_proc_thid;
 
     VectorEx<key_deskriptor> Hotkey_Manager::GetKeyboardState()
     {
-        Local_Keyboard_Deskriptor_Mutex->lock();
-        VectorEx<key_deskriptor> tmp = Local_Keyboard_Deskriptor;
-        Local_Keyboard_Deskriptor_Mutex->unlock();
+        Keyboard_Deskriptor_Mutex->lock();
+        VectorEx<key_deskriptor> tmp = Keyboard_Deskriptor;
+        Keyboard_Deskriptor_Mutex->unlock();
 
         return tmp;
     }
@@ -62,30 +62,52 @@ namespace HKPP
         MSG msg;
 
         if (!hook_handle)
-        {
-            printf("\nHotkey_Manager::hook_main() >> %d\n", GetLastError());
-            std::exit(-1);
-        }
+            printf("\nHotkey_Manager::hook_main() >> enable to start | code:%d\n", GetLastError());
 
         while (GetMessageW(&msg, NULL, NULL, NULL))
         {
             TranslateMessage(&msg);
+            switch (msg.message)
+            {
+
+            case WM_QUIT:
+                DispatchMessage(&msg);
+                goto hook_main_cleanup_GOTO_LABEL;
+                break;
+
+            case WM_HKPP_DEFAULT_CALLBACK_MESSAGE:
+            {
+                if (msg.lParam)
+                {
+                    Hotkey_Deskriptor* dsk = (Hotkey_Deskriptor*)msg.lParam;
+                    dsk->settings.user_callback(*dsk);
+                    delete dsk;
+                }
+            }
+            break;
+            }
             DispatchMessage(&msg);
         }
 
-        UnhookWindowsHookEx(hook_handle);
+    hook_main_cleanup_GOTO_LABEL:
+
+        if (!hook_handle)
+            UnhookWindowsHookEx(hook_handle);
         hook_proc_thid = 0;
     }
 
     LRESULT CALLBACK Hotkey_Manager::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
         bool repeated_input = false;
-
         bool block_input = false;
 
+        comb_vec_mutex->lock();
+        VectorEx <Hotkey_Deskriptor> Local_Combinations = Combinations;
+        comb_vec_mutex->unlock();
+
+        Keyboard_Deskriptor_Mutex->lock();
         if (nCode == HC_ACTION)
         {
-            Local_Keyboard_Deskriptor_Mutex->lock();
 
             KBDLLHOOKSTRUCT* kbd = (KBDLLHOOKSTRUCT*)lParam;
 
@@ -97,22 +119,21 @@ namespace HKPP
 
             if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)
             {
-                if (!Local_Keyboard_Deskriptor.Contains(key_desk.Key))
+                if (!Keyboard_Deskriptor.Contains(key_desk.Key))
                 {
-                    Local_Keyboard_Deskriptor.push_back(key_desk);  //# insert
-                    Local_Keyboard_Deskriptor.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
+                    Keyboard_Deskriptor.push_back(key_desk);  //# insert
+                    Keyboard_Deskriptor.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
                 }
 
                 else
                 {
                     repeated_input = true;
 
-                    Local_Keyboard_Deskriptor.foreach([&](key_deskriptor& kd) -> void
+                    Keyboard_Deskriptor.foreach([&](key_deskriptor& kd) -> void
                         {
                             if (kd.Key == key_desk.Key)
                             {
                                 kd = key_desk;
-
                                 repeated_input = false;
                             }
                         });
@@ -120,67 +141,49 @@ namespace HKPP
             }
 
             if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP)
-            {
-                Local_Keyboard_Deskriptor.Rem_All(kbd->vkCode);
-            }
+                Keyboard_Deskriptor.Rem_All(kbd->vkCode);
 
+            VectorEx <Hotkey_Deskriptor> combs;
 
-            comb_vec_mutex->lock();
-            {
+            Local_Combinations.foreach([&](Hotkey_Deskriptor& desk) -> void
+                {
 
-                VectorEx <Hotkey_Deskriptor> combs;
-
-                Combinations.foreach([&](Hotkey_Deskriptor& desk) -> void
+                    if (desk.Check_Combination(Keyboard_Deskriptor))
                     {
-
-                        if (desk.Check_Combination(Local_Keyboard_Deskriptor))
+                        if (desk.Key_List.Contains(key_desk))// only if key that pressed is in key list 
                         {
-                            if (desk.Key_List.Contains(key_desk))// only if key that pressed is in key list 
+                            if (!repeated_input)
                             {
-                                if (!repeated_input)
+                                desk.Real = true;
+
+                                for (size_t i = 0; i < desk.Key_List.size(); i++)
                                 {
-                                    desk.Real = true;
-
-                                    for (size_t i = 0; i < desk.Key_List.size(); i++)
+                                    if (Keyboard_Deskriptor.Contains({ desk.Key_List[i].Key, HKPP::injected_status_enm::INJECTED }) && !Keyboard_Deskriptor.Contains({ desk.Key_List[i].Key, HKPP::injected_status_enm::NOT_INJECTED }))
                                     {
-                                        if (Local_Keyboard_Deskriptor.Contains({ desk.Key_List[i].Key, HKPP::injected_status_enm::INJECTED }) && !Local_Keyboard_Deskriptor.Contains({ desk.Key_List[i].Key, HKPP::injected_status_enm::NOT_INJECTED }))
-                                        {
-                                            desk.Real = false;
-                                            break;
-                                        }
+                                        desk.Real = false;
+                                        break;
                                     }
-                                    combs.push_back(desk);
-                                    //desk.Send_Event();
                                 }
-                                block_input |= desk.settings.Block_Input;
+                                combs.push_back(desk);
                             }
+                            block_input |= desk.settings.Block_Input;
                         }
-                    });
+                    }
+                });
 
-                combs.foreach([&](Hotkey_Deskriptor& d) -> void
-                    {
-                        bool send = true;
+            combs.foreach([&](Hotkey_Deskriptor& d) -> void
+                {
+                    bool send = true;
+                    combs.foreach([&](Hotkey_Deskriptor& d_in) -> void { if (d != d_in && d.Check_Combination(d_in.Key_List)) { send = false; } });
+                    if (send) d.Send_Event();
+                });
 
-                        combs.foreach([&](Hotkey_Deskriptor& d_in) -> void { if (d != d_in && d.Check_Combination(d_in.Key_List)) { send = false; } });
-
-                        if (send)
-                            d.Send_Event();
-                    });
-            }
-
-            comb_vec_mutex->unlock();
-
-            Local_Keyboard_Deskriptor_Mutex->unlock();
         }
-
-
+        Keyboard_Deskriptor_Mutex->unlock();
 
         LLK_Proc_Additional_Callbacks_mutex->lock();
-        {
-            LLK_Proc_Additional_Callbacks.foreach([&](callback_descroptor_t& dsk) -> void { block_input |= dsk.fnc(nCode, wParam, lParam); });
-        }
+        LLK_Proc_Additional_Callbacks.foreach([&](callback_descriptor_t& dsk) -> void { block_input |= dsk.fnc(nCode, wParam, lParam); });
         LLK_Proc_Additional_Callbacks_mutex->unlock();
-
 
         if (block_input)
             return 1;
@@ -196,8 +199,8 @@ namespace HKPP
         if (!hook_proc_thid)
             hook_proc_thid = new std::atomic<DWORD>;
 
-        if (!Local_Keyboard_Deskriptor_Mutex)
-            Local_Keyboard_Deskriptor_Mutex = new std::mutex;
+        if (!Keyboard_Deskriptor_Mutex)
+            Keyboard_Deskriptor_Mutex = new std::mutex;
 
         if (!LLK_Proc_Additional_Callbacks_mutex)
             LLK_Proc_Additional_Callbacks_mutex = new std::mutex();
@@ -209,67 +212,77 @@ namespace HKPP
     void Hotkey_Manager::HKPP_Stop()
     {
         PostThreadMessageW(*hook_proc_thid, WM_QUIT, (WPARAM)NULL, (LPARAM)NULL);
-        this->Clear();
+        this->Clear_Hotkeys();
 
         LLK_Proc_Additional_Callbacks_mutex->lock();
         this->LLK_Proc_Additional_Callbacks.clear();
         LLK_Proc_Additional_Callbacks_mutex->unlock();
     }
 
-    void Hotkey_Manager::Clear()
+    size_t Hotkey_Manager::Add_Callback(std::function <bool(int, WPARAM, LPARAM)> fnc_p)
+    {
+        size_t uuid = 0;
+
+        LLK_Proc_Additional_Callbacks_mutex->lock();
+        LLK_Proc_Additional_Callbacks.push_back({ uuid ,fnc_p });
+        uuid = LLK_Proc_Additional_Callbacks.size();
+        LLK_Proc_Additional_Callbacks_mutex->unlock();
+
+        return uuid;
+    }
+
+    void Hotkey_Manager::Remove_Callback(size_t uuid)
+    {
+        LLK_Proc_Additional_Callbacks_mutex->lock();
+        LLK_Proc_Additional_Callbacks.Rem_If([&](callback_descriptor_t ds) -> bool { return(ds.uuid == uuid); });
+        LLK_Proc_Additional_Callbacks_mutex->unlock();
+    }
+
+    void Hotkey_Manager::Clear_Callbacks()
+    {
+        LLK_Proc_Additional_Callbacks_mutex->lock();
+        LLK_Proc_Additional_Callbacks.clear();
+        LLK_Proc_Additional_Callbacks_mutex->unlock();
+    }
+
+    size_t Hotkey_Manager::Add_Hotkey(Hotkey_Deskriptor desk)
+    {
+        size_t uuid = 0;
+
+        comb_vec_mutex->lock();
+        {
+            if (!Combinations.Contains(desk))
+            {
+                desk.Key_List.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
+
+                if (desk.settings.Allow_Injected == HKPP_DENY_INJECTED)
+                    desk.Key_List.foreach([&](key_deskriptor& k) -> void { k.Injected = HKPP::injected_status_enm::NOT_INJECTED; });
+                else
+                    desk.Key_List.foreach([&](key_deskriptor& k) -> void { k.Injected = HKPP::injected_status_enm::UNDEFINED_INJECTION_STATUS; });
+
+                if (!desk.settings.Thread_Id)
+                    desk.settings.Thread_Id = hook_proc_thid->load();
+
+                Combinations.push_back(desk);
+                uuid = Combinations.size();
+            }
+        }
+        comb_vec_mutex->unlock();
+
+        return uuid;
+    }
+
+    void Hotkey_Manager::Remove_Hotkey(size_t uuid)
+    {
+        comb_vec_mutex->lock();
+        Combinations.Rem_If([&](Hotkey_Deskriptor ds) -> bool { return(ds.settings.uuid == uuid); });
+        comb_vec_mutex->unlock();
+    }
+
+    void Hotkey_Manager::Clear_Hotkeys()
     {
         comb_vec_mutex->lock();
         Combinations.clear();
         comb_vec_mutex->unlock();
-    }
-
-
-    bool Hotkey_Manager::Add_Callback(std::function <bool(int, WPARAM, LPARAM)> fnc_p, size_t uuid_p)
-    {
-        //# == check
-        LLK_Proc_Additional_Callbacks_mutex->lock();
-        LLK_Proc_Additional_Callbacks.push_back({ uuid_p ,fnc_p });
-        LLK_Proc_Additional_Callbacks_mutex->unlock();
-
-        return true;
-    }
-
-    bool Hotkey_Manager::Add(Hotkey_Deskriptor desk)
-    {
-        comb_vec_mutex->lock();
-
-        if (!Combinations.Contains(desk))
-        {
-
-            if (desk.settings.Allow_Injected == HKPP_DENY_INJECTED)
-            {
-                desk.Key_List.foreach([&](key_deskriptor& k) -> void { k.Injected = HKPP::injected_status_enm::NOT_INJECTED; });
-            }
-
-            else
-            {
-                desk.Key_List.foreach([&](key_deskriptor& k) -> void { k.Injected = HKPP::injected_status_enm::UNDEFINED_INJECTION_STATUS; });
-            }
-
-            desk.Key_List.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
-
-            Combinations.push_back(desk);
-
-            comb_vec_mutex->unlock();
-
-            return true;
-        }
-        else
-            comb_vec_mutex->unlock();
-
-        return false;
-    }
-
-    void Hotkey_Manager::Remove(Hotkey_Deskriptor desk)
-    {
-        comb_vec_mutex->lock();
-        Combinations.Rem_All(desk);
-        comb_vec_mutex->unlock();
-
     }
 }

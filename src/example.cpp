@@ -26,30 +26,19 @@ int main(int argc, char** argv)
     Hotkey_Manager* mng = HKPP::Hotkey_Manager::Get_Instance();
 
     mng->HKPP_Init();
-
-    mng->Add(HKPP::Hotkey_Deskriptor({ VK_LWIN , 'C' }, Hotkey_Settings_t(GetCurrentThreadId(), HKPP_BLOCK_INPUT, HKPP_ALLOW_INJECTED, WM_HKPP_DEFAULT_CALLBACK_MESSAGE,L"name") ));
-
-    MSG msg;
-    while (GetMessageW(&msg, NULL, NULL, NULL))
-    {
-        TranslateMessage(&msg);
-
-
-        if (msg.message == WM_HKPP_DEFAULT_CALLBACK_MESSAGE)
-        {
-            if (msg.lParam)
+    
+    size_t hId = mng->Add_Hotkey(HKPP::Hotkey_Deskriptor(
+        { VK_LWIN , 'C' },
+        Hotkey_Settings_t(L"My combination",
+            [&](Hotkey_Deskriptor hkd) -> void
             {
-                Hotkey_Deskriptor* dsk = (Hotkey_Deskriptor*)msg.lParam;
+                printf("%ws", hkd.settings.name.c_str());
+            })));
 
-                wprintf(L"pressed \"%s\" isReal -> %s\n",dsk->settings.name.c_str(), dsk->Real ? L"true" : L"false");
+    while (1);
 
-                delete dsk;
-            }
-        }
-
-
-        DispatchMessageW(&msg);
-    }
+    mng->Remove_Hotkey(hId);
+    mng->HKPP_Stop();
 
     return 0;
 }
