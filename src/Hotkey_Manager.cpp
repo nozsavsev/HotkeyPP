@@ -67,26 +67,21 @@ namespace HKPP
         while (GetMessageW(&msg, NULL, NULL, NULL))
         {
             TranslateMessage(&msg);
-            switch (msg.message)
-            {
 
-            case WM_QUIT:
-                DispatchMessage(&msg);
-                goto hook_main_cleanup_GOTO_LABEL;
+            if (msg.message == WM_QUIT)
                 break;
 
-            case WM_HKPP_DEFAULT_CALLBACK_MESSAGE:
-            {
+
+            if (msg.message == WM_HKPP_DEFAULT_CALLBACK_MESSAGE)
                 if (msg.lParam)
                 {
                     Hotkey_Deskriptor* dsk = (Hotkey_Deskriptor*)msg.lParam;
                     dsk->settings.user_callback(*dsk);
                     delete dsk;
                 }
-            }
-            break;
-            }
-            DispatchMessage(&msg);
+
+            DispatchMessageW(&msg);
+
         }
 
     hook_main_cleanup_GOTO_LABEL:
@@ -207,6 +202,8 @@ namespace HKPP
 
         if (!hook_main_th)
             hook_main_th = new std::thread(&hook_main);
+
+        while (!hook_proc_thid->load()) Sleep(10);
     }
 
     void Hotkey_Manager::HKPP_Stop()
@@ -262,6 +259,9 @@ namespace HKPP
 
                 if (!desk.settings.Thread_Id)
                     desk.settings.Thread_Id = hook_proc_thid->load();
+
+                if (!desk.settings.Thread_Id)
+                    desk.settings.Thread_Id = this->hook_proc_thid->load();
 
                 Combinations.push_back(desk);
                 uuid = Combinations.size();
