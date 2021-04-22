@@ -64,6 +64,7 @@ namespace HKPP
     {
     public:
         DWORD Key = NULL;
+        std::chrono::steady_clock::time_point Time = std::chrono::high_resolution_clock::now();
         injected_status_enm Injected = injected_status_enm::UNDEFINED_INJECTION_STATUS;
 
         key_deskriptor();
@@ -204,8 +205,8 @@ namespace HKPP
         template <class T>
         bool VectorEx<T>::Contains(T val)
         {
-            for (size_t i = 0; i < this->size(); i++)
-                if ((*this)[i] == val)
+            for ( size_t i = 0; i < this->size(); i++ )
+                if ( (*this)[i] == val )
                     return true;
 
             return false;
@@ -215,7 +216,7 @@ namespace HKPP
         void VectorEx <T>::Rem_All(T val)
         {
             this->erase(
-                std::remove_if(this->begin(), this->end(), [&](T& item) -> bool { return (item == val); })
+                std::remove_if(this->begin(), this->end(), [&] (T& item) -> bool { return (item == val); })
                 , this->end());
         }
 
@@ -229,7 +230,7 @@ namespace HKPP
         template <class T>
         bool VectorEx <T>::operator==(VectorEx<T>& rhs)
         {
-            if (this->size() == rhs.size())
+            if ( this->size() == rhs.size() )
             {
                 return std::equal(this->begin(), this->end(), rhs.begin());
             }
@@ -240,7 +241,7 @@ namespace HKPP
         template <class T>
         bool VectorEx <T>::operator!=(VectorEx<T>& rhs)
         {
-            if (this->size() == rhs.size())
+            if ( this->size() == rhs.size() )
             {
                 return !std::equal(this->begin(), this->end(), rhs.begin());
             }
