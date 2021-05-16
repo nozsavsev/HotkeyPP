@@ -53,6 +53,14 @@ namespace HKPP
 
     using namespace HKPP::extra;
 
+
+    class key_deskriptor;
+    class Hotkey_Deskriptor;
+    class Hotkey_Settings_t;
+    class Hotkey_Deskriptor;
+    class callback_descriptor_t;
+    class Hotkey_Manager;
+
     enum class injected_status_enm
     {
         UNDEFINED_INJECTION_STATUS = 0,
@@ -90,10 +98,10 @@ namespace HKPP
 
     class Hotkey_Deskriptor;
 
-    struct Hotkey_Settings_t
+    class Hotkey_Settings_t
     {
         void* userdata;
-        std::function <void(void*)> userdata_destructor;
+        std::function <void(void*)> userdata_destructor = [](void* a) -> void {};
 
     public:
 
@@ -115,11 +123,11 @@ namespace HKPP
 
         size_t uuid = 0;
         std::wstring name = L"";
-        std::function <void(Hotkey_Deskriptor)> user_callback = {};
+        std::function <void(Hotkey_Deskriptor)> user_callback;
 
         Hotkey_Settings_t(
             std::wstring name_,
-            std::function <void(Hotkey_Deskriptor)> user_callback_ = {},
+            std::function <void(Hotkey_Deskriptor)> user_callback_,
             DWORD Thread_Id_ = 0,
             bool Block_Input_ = HKPP_ALLOW_INPUT,
             bool Allow_Injected_ = HKPP_DENY_INJECTED,
@@ -203,8 +211,9 @@ namespace HKPP
 
 
         size_t Add_Hotkey(Hotkey_Deskriptor desk);
-        void Clear_Hotkeys();
         void Remove_Hotkey(size_t uuid);
+        Hotkey_Deskriptor Get_Hotkey(size_t uuid);
+        void Clear_Hotkeys();
 
         size_t Add_Callback(std::function <bool(int, WPARAM, LPARAM, VectorEx<key_deskriptor>&, bool)> fnc_p); // if succeeded returns uuid for callback else 0 
         void Clear_Callbacks();

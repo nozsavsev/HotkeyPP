@@ -307,6 +307,17 @@ namespace HKPP
         comb_vec_mutex->unlock();
     }
 
+    Hotkey_Deskriptor Hotkey_Manager::Get_Hotkey(size_t uuid)
+    {
+        Hotkey_Deskriptor rt({}, {});
+
+        comb_vec_mutex->lock();
+        Combinations.foreach([&](Hotkey_Deskriptor ds) -> void { if (ds.settings.uuid == uuid) rt = ds; });
+        comb_vec_mutex->unlock();
+
+        return rt;
+    }
+
     void Hotkey_Manager::Clear_Hotkeys()
     {
         comb_vec_mutex->lock();
