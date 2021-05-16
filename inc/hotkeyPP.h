@@ -128,7 +128,22 @@ namespace HKPP
 
     class Hotkey_Deskriptor
     {
+    protected:
+        void* userdata;
+        std::function <void(void*)> userdata_destructor;
     public:
+
+        void Set_User_Data(void* udata, std::function <void(void*)> udata_destructor)
+        {
+            userdata = udata;
+            userdata_destructor = udata_destructor;
+        }
+
+        void* Get_User_Data()
+        {
+            return userdata;
+        }
+
         bool Real = false;
         VectorEx <key_deskriptor> Key_List;
         Hotkey_Settings_t settings;
@@ -141,6 +156,10 @@ namespace HKPP
             Init(keys_vector, set);
         }
 
+        ~Hotkey_Deskriptor()
+        {
+            userdata_destructor(userdata);
+        }
 
         void Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
         bool Check_Combination(VectorEx <key_deskriptor>& KState);
@@ -150,7 +169,7 @@ namespace HKPP
     struct callback_descriptor_t
     {
         size_t uuid = 0;
-        std::function <bool(int, WPARAM, LPARAM)> fnc;
+        std::function <bool(int, WPARAM, LPARAM, VectorEx<key_deskriptor>&, bool)> fnc_p;
     };
 
     class Hotkey_Manager
@@ -164,14 +183,11 @@ namespace HKPP
 
         static VectorEx <key_deskriptor> Keyboard_Deskriptor;
         static std::mutex* Keyboard_Deskriptor_Mutex;
+
         static VectorEx <Hotkey_Deskriptor> Combinations;
         static std::mutex* comb_vec_mutex;
 
         //return -> if true input will be blocked else allowed
-        //int nCode, WPARAM wParam, LPARAM lParam > standart LowLevelKeyboardProc args
-        //! DO NOT CALL "CallNextHookEx", for love nor money!
-        //https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms644985(v=vs.85) for details 
-
         static VectorEx <callback_descriptor_t> LLK_Proc_Additional_Callbacks;
         static std::mutex* LLK_Proc_Additional_Callbacks_mutex;
 
@@ -192,7 +208,7 @@ namespace HKPP
         void Clear_Hotkeys();
         void Remove_Hotkey(size_t uuid);
 
-        size_t Add_Callback(std::function <bool(int, WPARAM, LPARAM)> fnc_p);
+        size_t Add_Callback(std::function <bool(int, WPARAM, LPARAM, VectorEx<key_deskriptor>&, bool)> fnc_p); // if succeeded returns uuid for callback else 0 
         void Clear_Callbacks();
         void Remove_Callback(size_t uuid);
     };
@@ -205,8 +221,8 @@ namespace HKPP
         template <class T>
         bool VectorEx<T>::Contains(T val)
         {
-            for ( size_t i = 0; i < this->size(); i++ )
-                if ( (*this)[i] == val )
+            for (size_t i = 0; i < this->size(); i++)
+                if ((*this)[i] == val)
                     return true;
 
             return false;
@@ -216,7 +232,7 @@ namespace HKPP
         void VectorEx <T>::Rem_All(T val)
         {
             this->erase(
-                std::remove_if(this->begin(), this->end(), [&] (T& item) -> bool { return (item == val); })
+                std::remove_if(this->begin(), this->end(), [&](T& item) -> bool { return (item == val); })
                 , this->end());
         }
 
@@ -230,10 +246,8 @@ namespace HKPP
         template <class T>
         bool VectorEx <T>::operator==(VectorEx<T>& rhs)
         {
-            if ( this->size() == rhs.size() )
-            {
+            if (this->size() == rhs.size())
                 return std::equal(this->begin(), this->end(), rhs.begin());
-            }
 
             return false;
         }
@@ -241,10 +255,8 @@ namespace HKPP
         template <class T>
         bool VectorEx <T>::operator!=(VectorEx<T>& rhs)
         {
-            if ( this->size() == rhs.size() )
-            {
+            if (this->size() == rhs.size())
                 return !std::equal(this->begin(), this->end(), rhs.begin());
-            }
 
             return true;
         }
