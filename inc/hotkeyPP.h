@@ -137,7 +137,8 @@ namespace HKPP
             user_callback = user_callback_;
         }
 
-        Hotkey_Settings_t()
+        Hotkey_Settings_t() {}
+        ~Hotkey_Settings_t()
         {
             userdata_destructor(userdata);
         }
