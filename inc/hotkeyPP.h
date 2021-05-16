@@ -92,7 +92,21 @@ namespace HKPP
 
     struct Hotkey_Settings_t
     {
+        void* userdata;
+        std::function <void(void*)> userdata_destructor;
+
     public:
+
+        void Set_User_Data(void* udata, std::function <void(void*)> udata_destructor)
+        {
+            userdata = udata;
+            userdata_destructor = udata_destructor;
+        }
+
+        void* Get_User_Data()
+        {
+            return userdata;
+        }
 
         DWORD Thread_Id = 0;
         bool Block_Input = 0;
@@ -123,27 +137,15 @@ namespace HKPP
             user_callback = user_callback_;
         }
 
-        Hotkey_Settings_t() {}
+        Hotkey_Settings_t()
+        {
+            userdata_destructor(userdata);
+        }
     };
 
     class Hotkey_Deskriptor
     {
-    protected:
-        void* userdata;
-        std::function <void(void*)> userdata_destructor;
     public:
-
-        void Set_User_Data(void* udata, std::function <void(void*)> udata_destructor)
-        {
-            userdata = udata;
-            userdata_destructor = udata_destructor;
-        }
-
-        void* Get_User_Data()
-        {
-            return userdata;
-        }
-
         bool Real = false;
         VectorEx <key_deskriptor> Key_List;
         Hotkey_Settings_t settings;
@@ -154,11 +156,6 @@ namespace HKPP
         Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
         {
             Init(keys_vector, set);
-        }
-
-        ~Hotkey_Deskriptor()
-        {
-            userdata_destructor(userdata);
         }
 
         void Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
