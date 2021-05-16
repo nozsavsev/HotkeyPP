@@ -191,7 +191,7 @@ namespace HKPP
                                 send = false;
                         });
 
-                    if (send)
+                    if (send && !repeated_input)
                         d.Send_Event();
                 });
 
@@ -291,6 +291,7 @@ namespace HKPP
                 if (!desk.settings.Thread_Id)
                     desk.settings.Thread_Id = this->hook_proc_thid->load();
 
+                desk.settings.uuid = Combinations.size() + 1;
                 Combinations.push_back(desk);
                 uuid = Combinations.size();
             }

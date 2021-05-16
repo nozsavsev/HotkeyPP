@@ -100,21 +100,10 @@ namespace HKPP
 
     class Hotkey_Settings_t
     {
-        void* userdata;
-        std::function <void(void*)> userdata_destructor = [](void* a) -> void {};
 
     public:
 
-        void Set_User_Data(void* udata, std::function <void(void*)> udata_destructor)
-        {
-            userdata = udata;
-            userdata_destructor = udata_destructor;
-        }
-
-        void* Get_User_Data()
-        {
-            return userdata;
-        }
+        void* userdata;
 
         DWORD Thread_Id = 0;
         bool Block_Input = 0;
@@ -143,12 +132,11 @@ namespace HKPP
             uuid = uuid;
             name = name_;
             user_callback = user_callback_;
+
         }
 
-        Hotkey_Settings_t() {}
-        ~Hotkey_Settings_t()
+        Hotkey_Settings_t()
         {
-            userdata_destructor(userdata);
         }
     };
 
