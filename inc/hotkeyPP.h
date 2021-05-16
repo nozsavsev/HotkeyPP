@@ -43,7 +43,7 @@ namespace HKPP
             bool Contains(T val);
             void Rem_All(T val);
             void Rem_If(std::function <bool(T)> fnc);
-            void foreach(std::function <void(T&)> fnc);
+            void Foreach(std::function <void(T&)> fnc);
             void Sort(std::function <bool(T, T)> fnc);
 
             bool operator==(VectorEx<T>& rhs);
@@ -110,9 +110,9 @@ namespace HKPP
         bool Allow_Injected = 0;
         UINT Msg = NULL;
 
-        size_t uuid = 0;
-        std::wstring name = L"";
-        std::function <void(Hotkey_Deskriptor)> user_callback;
+        size_t Uuid = 0;
+        std::wstring Name = L"";
+        std::function <void(Hotkey_Deskriptor)> User_Callback;
 
         Hotkey_Settings_t(
             std::wstring name_,
@@ -129,9 +129,8 @@ namespace HKPP
             Allow_Injected = Allow_Injected_;
             Msg = Msg_;
 
-            uuid = uuid;
-            name = name_;
-            user_callback = user_callback_;
+            Name = name_;
+            User_Callback = user_callback_;
 
         }
 
@@ -175,15 +174,15 @@ namespace HKPP
 
     protected:
 
-        static VectorEx <key_deskriptor> Keyboard_Deskriptor;
-        static std::mutex* Keyboard_Deskriptor_Mutex;
+        static VectorEx <key_deskriptor> keyboard_deskriptor;
+        static std::mutex* keyboard_deskriptor_mutex;
 
-        static VectorEx <Hotkey_Deskriptor> Combinations;
+        static VectorEx <Hotkey_Deskriptor> combinations;
         static std::mutex* comb_vec_mutex;
 
         //return -> if true input will be blocked else allowed
-        static VectorEx <callback_descriptor_t> LLK_Proc_Additional_Callbacks;
-        static std::mutex* LLK_Proc_Additional_Callbacks_mutex;
+        static VectorEx <callback_descriptor_t> LLK_proc_additional_callbacks;
+        static std::mutex* LLK_proc_additional_callbacks_mutex;
 
 
         std::thread* hook_main_th = NULL;
@@ -192,7 +191,7 @@ namespace HKPP
 
     public:
         static Hotkey_Manager* Get_Instance();
-        static VectorEx<key_deskriptor> GetKeyboardState();
+        static VectorEx<key_deskriptor> Get_Keyboard_State();
 
         void HKPP_Init();
         void HKPP_Stop();
@@ -234,7 +233,7 @@ namespace HKPP
         template <class T>
         void VectorEx <T>::Rem_If(std::function <bool(T)> fnc) { std::remove_if(this->begin(), this->end(), fnc); }
         template <class T>
-        void VectorEx <T>::foreach(std::function <void(T&)> fnc) { std::for_each(this->begin(), this->end(), fnc); }
+        void VectorEx <T>::Foreach(std::function <void(T&)> fnc) { std::for_each(this->begin(), this->end(), fnc); }
         template <class T>
         void VectorEx <T>::Sort(std::function <bool(T, T)> fnc) { std::sort(this->begin(), this->end(), fnc); }
 
