@@ -191,7 +191,7 @@ namespace HKPP
 
     public:
         static Hotkey_Manager* Get_Instance();
-        static VectorEx<key_deskriptor> Get_Keyboard_State();
+        static VectorEx<key_deskriptor> Get_Keyboard_State();//inited or not
 
         void HKPP_Init();
         void HKPP_Stop();
