@@ -1,4 +1,4 @@
-/*Copyright 2020 Nozdrachev Ilia
+/*Copyright 2024 Ilia Nozdrachev
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,37 +19,29 @@ using namespace HKPP::extra;
 namespace HKPP
 {
 
-    void Hotkey_Deskriptor::Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
+    HKPPHotkey::HKPPHotkey(VectorEx <HKPPKey> KeyList, HotkeyConfig Config)
     {
-        Key_List = keys_vector;
-        Key_List.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
-
-        settings = set;
+        config = Config;
+        keyList = KeyList;
+        keyList.Sort([&](auto d1, auto d2) -> bool { return (d1 < d2); });
     }
 
-    bool Hotkey_Deskriptor::Check_Combination(VectorEx <key_deskriptor>& KState)
+    bool HKPPHotkey::Check_Combination(VectorEx <HKPPKey>& KState)
     {
-        for (size_t i = 0; i < this->Key_List.size(); i++)
-            if (!KState.Contains(Key_List[i].Key))
+        for (size_t i = 0; i < this->keyList.size(); i++)
+            if (!KState.Contains(keyList[i].key))
                 return false;
 
         return true;
     }
 
-    void Hotkey_Deskriptor::Send_Event() noexcept
-    {
-        Hotkey_Deskriptor* temp_hotkey_descriptor = new Hotkey_Deskriptor(*this);
-
-        PostThreadMessageW(this->settings.Thread_Id, this->settings.Msg, NULL, (LPARAM)temp_hotkey_descriptor);
-    }
-
-    bool Hotkey_Deskriptor::operator== (Hotkey_Deskriptor& s)
+    bool HKPPHotkey::operator== (HKPPHotkey& s)
     {
         return (
-            (this->Key_List == s.Key_List) &&
-            (this->settings.Thread_Id == s.settings.Thread_Id) &&
-            (this->settings.Allow_Injected == s.settings.Allow_Injected)
+            (this->keyList == s.keyList) &&
+            (this->config.allowInjected == s.config.allowInjected)
             );
     }
-    bool Hotkey_Deskriptor::operator!= (Hotkey_Deskriptor& s) { return !operator==(s); }
+
+    bool HKPPHotkey::operator!= (HKPPHotkey& s) { return !operator==(s); }
 }

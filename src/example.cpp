@@ -1,4 +1,4 @@
-﻿/*Copyright 2020 Nozdrachev Ilia
+﻿/*Copyright 2024 Ilia Nozdrachev
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*USAGE
+///*USAGE
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "hotkeyPP.h"
@@ -23,22 +23,31 @@ using namespace HKPP::extra;
 
 int main(int argc, char** argv)
 {
-    Hotkey_Manager* mng = HKPP::Hotkey_Manager::Get_Instance();
+    ///*
+
+    Manager* mng = HKPP::Manager::GetInstance();
 
     mng->HKPP_Init();
-    
-    size_t hId = mng->Add_Hotkey(HKPP::Hotkey_Deskriptor(
-        { VK_LWIN , 'C' },
-        Hotkey_Settings_t(L"My combination",
-            [&](Hotkey_Deskriptor hkd) -> void
-            {
-                printf("%ws", hkd.settings.name.c_str());
-            })));
+
+    size_t hId = mng->RegisterHotkey(HKPP::Hotkey(
+        { 'C' , 'V'},
+        [](HotkeyEvent evt) -> void {
+
+            Sleep(10000);
+            std::cout << "Hotkey pressed" << std::endl;
+        },
+        kbd_event_propagation::PROPAGATE,
+        HKPP::Hotkey::injection_permission::ALLOW_ALL,
+        HKPP::Hotkey::parallel_execution::BLOCK
+    )
+    );
 
     while (1);
 
-    mng->Remove_Hotkey(hId);
+    mng->UnregisterHotkey(hId);
     mng->HKPP_Stop();
+
+    //*/
 
     return 0;
 }

@@ -1,4 +1,4 @@
-/*Copyright 2020 Nozdrachev Ilia
+/*Copyright 2024 Ilia Nozdrachev
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,11 +16,16 @@ limitations under the License.
 #pragma once
 
 #include <windows.h>
+
+#include <mutex>
 #include <thread>
 #include <vector>
-#include <mutex>
+#include <future>
+#include <optional>
+#include <iostream>
 #include <algorithm>
 #include <functional>
+
 
 #define WM_HKPP_DEFAULT_CALLBACK_MESSAGE (WM_APP+1)
 
@@ -41,10 +46,13 @@ namespace HKPP
             using std::vector<T>::vector;
 
             bool Contains(T val);
-            void Rem_All(T val);
-            void Rem_If(std::function <bool(T)> fnc);
+            bool Contains(std::function<bool(T&)> callback);
+            std::optional<T> Find(T val);
+            std::optional<T> Find(std::function<bool(T&)> callback);
+            void RemAll(T val);
+            void RemIf(std::function <bool(T&)> fnc);
             void Foreach(std::function <void(T&)> fnc);
-            void Sort(std::function <bool(T, T)> fnc);
+            void Sort(std::function <bool(T&, T&)> fnc);
 
             bool operator==(VectorEx<T>& rhs);
             bool operator!=(VectorEx<T>& rhs);
@@ -53,158 +61,208 @@ namespace HKPP
 
     using namespace HKPP::extra;
 
+    class Key;
+    class Hotkey;
+    class HotkeyEvent;
+    class KBDEventCallback;
+    class Manager;
 
-    class key_deskriptor;
-    class Hotkey_Deskriptor;
-    class Hotkey_Settings_t;
-    class Hotkey_Deskriptor;
-    class callback_descriptor_t;
-    class Hotkey_Manager;
+    extern std::function <void(HotkeyEvent)> DefaultHotkeyCallback;
 
-    enum class injected_status_enm
+    enum kbd_event_propagation
     {
-        UNDEFINED_INJECTION_STATUS = 0,
-        INJECTED = 1,
-        NOT_INJECTED = 2
+        PROPAGATE = 0,
+        BLOCK
     };
 
-    class key_deskriptor
+    enum class injection_status
     {
-    public:
-        DWORD Key = NULL;
-        std::chrono::steady_clock::time_point Time = std::chrono::high_resolution_clock::now();
-        injected_status_enm Injected = injected_status_enm::UNDEFINED_INJECTION_STATUS;
-
-        key_deskriptor();
-
-        key_deskriptor(DWORD key_ARG, injected_status_enm injected_ARG);
-
-        key_deskriptor(DWORD key_ARG);
-
-        bool operator== (key_deskriptor& s);
-        bool operator!= (key_deskriptor& s);
-        bool operator>  (key_deskriptor& s);
-        bool operator<  (key_deskriptor& s);
-        bool operator<= (key_deskriptor& s);
-        bool operator>= (key_deskriptor& s);
-
-        bool operator== (DWORD& s);
-        bool operator!= (DWORD& s);
-        bool operator>  (DWORD& s);
-        bool operator<  (DWORD& s);
-        bool operator<= (DWORD& s);
-        bool operator>= (DWORD& s);
+        INJECTED = 0,
+        LL_INJECTED,
+        REAL
     };
 
-    class Hotkey_Deskriptor;
-
-    class Hotkey_Settings_t
-    {
-
-    public:
-
-        void* userdata;
-
-        DWORD Thread_Id = 0;
-        bool Block_Input = 0;
-        bool Allow_Injected = 0;
-        UINT Msg = NULL;
-
-        size_t Uuid = 0;
-        std::wstring Name = L"";
-        std::function <void(Hotkey_Deskriptor)> User_Callback;
-
-        Hotkey_Settings_t(
-            std::wstring name_,
-            std::function <void(Hotkey_Deskriptor)> user_callback_,
-            DWORD Thread_Id_ = 0,
-            bool Block_Input_ = HKPP_ALLOW_INPUT,
-            bool Allow_Injected_ = HKPP_DENY_INJECTED,
-            UINT Msg_ = WM_HKPP_DEFAULT_CALLBACK_MESSAGE
-        )
-
-        {
-            Thread_Id = Thread_Id_;
-            Block_Input = Block_Input_;
-            Allow_Injected = Allow_Injected_;
-            Msg = Msg_;
-
-            Name = name_;
-            User_Callback = user_callback_;
-
-        }
-
-        Hotkey_Settings_t()
-        {
-        }
-    };
-
-    class Hotkey_Deskriptor
+    class Key
     {
     public:
-        bool Real = false;
-        VectorEx <key_deskriptor> Key_List;
-        Hotkey_Settings_t settings;
+        DWORD key = NULL;
+        std::chrono::steady_clock::time_point time = std::chrono::high_resolution_clock::now();
+        injection_status injected = injection_status::INJECTED;
 
-        bool operator!= (Hotkey_Deskriptor& s);
-        bool operator== (Hotkey_Deskriptor& s);
+        Key(DWORD key_ARG, injection_status injected_ARG = injection_status::INJECTED);
 
-        Hotkey_Deskriptor(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set)
+        bool operator== (const Key& s) const;
+        bool operator!= (const Key& s) const;
+        bool operator>  (const Key& s) const;
+        bool operator<  (const Key& s) const;
+        bool operator<= (const Key& s) const;
+        bool operator>= (const Key& s) const;
+
+        bool operator== (const DWORD& s) const;
+        bool operator!= (const DWORD& s) const;
+        bool operator>  (const DWORD& s) const;
+        bool operator<  (const DWORD& s) const;
+        bool operator<= (const DWORD& s) const;
+        bool operator>= (const DWORD& s) const;
+    };
+
+    class Hotkey
+    {
+    public:
+
+        enum injection_permission
         {
-            Init(keys_vector, set);
+            ALLOW_ALL = 0,
+            ALLOW_LL_INJECTED,
+            ONLY_REAL_INPUT
+        };
+
+        enum parallel_execution
+        {
+            BLOCK = 0,
+            ALLOW,
+        };
+
+
+        size_t id = 0;
+
+        kbd_event_propagation kbdEventPropagationStatus = kbd_event_propagation::PROPAGATE;
+        injection_permission allowedInjectionLevel = injection_permission::ONLY_REAL_INPUT;
+        parallel_execution paralelExecutionPolicy = parallel_execution::BLOCK;
+
+        VectorEx <Key> keyList;
+
+        std::function <void(HotkeyEvent)> callback = DefaultHotkeyCallback;
+
+        Hotkey(
+            VectorEx <Key> KeyList,
+            std::function <void(HotkeyEvent)> Callback = DefaultHotkeyCallback,
+            kbd_event_propagation KbdEventPropagationStatus = kbd_event_propagation::PROPAGATE,
+            injection_permission InjectionPermission = injection_permission::ONLY_REAL_INPUT,
+            parallel_execution ParalelExecutionPolicy = parallel_execution::BLOCK
+        );
+
+        kbd_event_propagation checkAndDispatch(VectorEx <Key>& KeyboardState);
+
+        bool operator!= (const Hotkey& s) const;
+        bool operator== (const Hotkey& s) const;
+    };
+
+
+    class KBDEventCallback
+    {
+    public:
+        KBDEventCallback(size_t CallbackId, std::function <kbd_event_propagation(int, WPARAM, LPARAM, VectorEx<Key>&, bool)> CallbackFunction)
+        {
+            callbackId = CallbackId;
+            callbackFunction = CallbackFunction;
         }
 
-        void Init(VectorEx <key_deskriptor> keys_vector, Hotkey_Settings_t set);
-        bool Check_Combination(VectorEx <key_deskriptor>& KState);
-        void Send_Event() noexcept;
+        size_t callbackId = 0;
+        std::function <kbd_event_propagation(int, WPARAM, LPARAM, VectorEx<Key>&, bool)> callbackFunction;
+
+        bool operator==(const KBDEventCallback& s) const {
+            return callbackId == s.callbackId;
+        }
+
+        bool operator!=(const KBDEventCallback& s) const {
+            return !(*this == s);
+        }
     };
 
-    struct callback_descriptor_t
+
+    class HotkeyEvent
     {
-        size_t uuid = 0;
-        std::function <bool(int, WPARAM, LPARAM, VectorEx<key_deskriptor>&, bool)> fnc_p;
+    public:
+        HotkeyEvent(Hotkey Hotkey, injection_status InjectionStatus);
+        Hotkey hotkey;
+        injection_status injectionStatus = injection_status::INJECTED;
     };
 
-    class Hotkey_Manager
+    class HotkeyCallbackHandle {
+    public:
+        HotkeyCallbackHandle() = default;
+        HotkeyCallbackHandle(const HotkeyCallbackHandle& other) : hotkeyId(other.hotkeyId), future(std::move(const_cast<HotkeyCallbackHandle&>(other).future)) {}
+        HotkeyCallbackHandle(HotkeyCallbackHandle&& other) noexcept : hotkeyId(std::exchange(other.hotkeyId, 0)), future(std::move(other.future)) {}
+
+        HotkeyCallbackHandle(size_t HotkeyId, std::future<void> Future)
+        {
+            hotkeyId = HotkeyId;
+            std::swap(Future, future);
+        }
+
+        HotkeyCallbackHandle& operator=(HotkeyCallbackHandle other) {
+            std::swap(hotkeyId, other.hotkeyId);
+            std::swap(future, other.future);
+            return *this;
+        }
+
+        std::future<void> future;
+        size_t hotkeyId = 0;
+
+        bool operator==(const HotkeyCallbackHandle& s) const {
+            return hotkeyId == s.hotkeyId;
+        }
+
+        bool operator!=(const HotkeyCallbackHandle& s) const {
+            return !(*this == s);
+        }
+    };
+
+
+
+    class Manager
     {
     private:
-        Hotkey_Manager();
-        static Hotkey_Manager* instance;
+
+        Manager();
+
+        static Manager* instance;
         static std::atomic<DWORD>* hook_proc_thid;
+
+        std::atomic <size_t> hotkeyIdAutoincrement = 1;
+        std::atomic <size_t> callbackIdAutoincrement = 1;
+
+        friend class Hotkey;
+        static void runUserCallback(HotkeyEvent Evt, std::function <void(HotkeyEvent)> Callback, size_t Id);
 
     protected:
 
-        static VectorEx <key_deskriptor> keyboard_deskriptor;
-        static std::mutex* keyboard_deskriptor_mutex;
+        VectorEx <Key> keyboardState;
+        std::mutex* keyboardState_mutex;
 
-        static VectorEx <Hotkey_Deskriptor> combinations;
-        static std::mutex* comb_vec_mutex;
+        VectorEx <Hotkey> hotkeys;
+        std::mutex* hotkeys_mutex;
 
-        //return -> if true input will be blocked else allowed
-        static VectorEx <callback_descriptor_t> LLK_proc_additional_callbacks;
-        static std::mutex* LLK_proc_additional_callbacks_mutex;
+        VectorEx <KBDEventCallback> LLKP_AdditionalCallbacks;
+        std::mutex* LLKP_AdditionalCallbacks_mutex;
 
+        VectorEx<HotkeyCallbackHandle> HKPP_CallbackHandles;
+        std::mutex* HKPP_CallbackHandles_mutex;
 
-        std::thread* hook_main_th = NULL;
+        size_t getNewHotkeyId();
+        size_t getNewCallbackId();
+
+        std::thread* hook_main_thread = NULL;
         static void hook_main();
         static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 
     public:
-        static Hotkey_Manager* Get_Instance();
-        static VectorEx<key_deskriptor> Get_Keyboard_State();//inited or not
+        static Manager* GetInstance();
+        static VectorEx<Key> GetKeyboardState();
 
         void HKPP_Init();
         void HKPP_Stop();
 
+        size_t RegisterHotkey(Hotkey desk);
+        std::optional<Hotkey> GetHotkey(size_t uuid);
+        bool UpdateHotkey(Hotkey hotkey);
+        void UnregisterHotkey(size_t uuid);
+        void UnregisterAllHotkeys();
 
-        size_t Add_Hotkey(Hotkey_Deskriptor desk);
-        void Remove_Hotkey(size_t uuid);
-        Hotkey_Deskriptor Get_Hotkey(size_t uuid);
-        void Clear_Hotkeys();
-
-        size_t Add_Callback(std::function <bool(int, WPARAM, LPARAM, VectorEx<key_deskriptor>&, bool)> fnc_p); // if succeeded returns uuid for callback else 0 
-        void Clear_Callbacks();
-        void Remove_Callback(size_t uuid);
+        size_t RegisterCallback(std::function <kbd_event_propagation(int, WPARAM, LPARAM, VectorEx<Key>&, bool)> fnc_p);
+        void UnregisterAllCallbacks();
+        void UnregisterCallback(size_t uuid);
     };
 }
 
@@ -215,15 +273,34 @@ namespace HKPP
         template <class T>
         bool VectorEx<T>::Contains(T val)
         {
-            for (size_t i = 0; i < this->size(); i++)
-                if ((*this)[i] == val)
-                    return true;
-
-            return false;
+            auto iterator = std::find(this->begin(), this->end(), val);
+            return iterator != this->end();
         }
 
         template <class T>
-        void VectorEx <T>::Rem_All(T val)
+        bool VectorEx<T>::Contains(std::function<bool(T&)> callback)
+        {
+            auto iterator = std::find_if(this->begin(), this->end(), callback);
+            return iterator != this->end();
+        }
+
+        template <class T>
+        std::optional<T> VectorEx<T>::Find(T val)
+        {
+            auto iterator = std::find(this->begin(), this->end(), val);
+            return iterator != this->end() ? std::optional<T>{*iterator} : std::nullopt;
+        }
+
+        template <class T>
+        std::optional<T> VectorEx<T>::Find(std::function<bool(T&)> callback)
+        {
+            auto iterator = std::find_if(this->begin(), this->end(), callback);
+            return iterator != this->end() ? std::optional<T>{*iterator} : std::nullopt;
+        }
+
+
+        template <class T>
+        void VectorEx <T>::RemAll(T val)
         {
             this->erase(
                 std::remove_if(this->begin(), this->end(), [&](T& item) -> bool { return (item == val); })
@@ -231,11 +308,11 @@ namespace HKPP
         }
 
         template <class T>
-        void VectorEx <T>::Rem_If(std::function <bool(T)> fnc) { std::remove_if(this->begin(), this->end(), fnc); }
+        void VectorEx <T>::RemIf(std::function <bool(T&)> fnc) { std::remove_if(this->begin(), this->end(), fnc); }
         template <class T>
         void VectorEx <T>::Foreach(std::function <void(T&)> fnc) { std::for_each(this->begin(), this->end(), fnc); }
         template <class T>
-        void VectorEx <T>::Sort(std::function <bool(T, T)> fnc) { std::sort(this->begin(), this->end(), fnc); }
+        void VectorEx <T>::Sort(std::function <bool(T&, T&)> fnc) { std::sort(this->begin(), this->end(), fnc); }
 
         template <class T>
         bool VectorEx <T>::operator==(VectorEx<T>& rhs)
