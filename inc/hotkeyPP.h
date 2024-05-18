@@ -181,32 +181,12 @@ namespace HKPP
 
     class HotkeyCallbackHandle {
     public:
-        HotkeyCallbackHandle() = default;
-        HotkeyCallbackHandle(const HotkeyCallbackHandle& other) : hotkeyId(other.hotkeyId), future(std::move(const_cast<HotkeyCallbackHandle&>(other).future)) {}
-        HotkeyCallbackHandle(HotkeyCallbackHandle&& other) noexcept : hotkeyId(std::exchange(other.hotkeyId, 0)), future(std::move(other.future)) {}
-
-        HotkeyCallbackHandle(size_t HotkeyId, std::future<void> Future)
+        HotkeyCallbackHandle(size_t HotkeyId)
         {
             hotkeyId = HotkeyId;
-            std::swap(Future, future);
         }
 
-        HotkeyCallbackHandle& operator=(HotkeyCallbackHandle other) {
-            std::swap(hotkeyId, other.hotkeyId);
-            std::swap(future, other.future);
-            return *this;
-        }
-
-        std::future<void> future;
         size_t hotkeyId = 0;
-
-        bool operator==(const HotkeyCallbackHandle& s) const {
-            return hotkeyId == s.hotkeyId;
-        }
-
-        bool operator!=(const HotkeyCallbackHandle& s) const {
-            return !(*this == s);
-        }
     };
 
 
@@ -308,7 +288,7 @@ namespace HKPP
         }
 
         template <class T>
-        void VectorEx <T>::RemIf(std::function <bool(T&)> fnc) { std::remove_if(this->begin(), this->end(), fnc); }
+        void VectorEx <T>::RemIf(std::function <bool(T&)> fnc) { this->erase(std::remove_if(this->begin(), this->end(), fnc), this->end()); }
         template <class T>
         void VectorEx <T>::Foreach(std::function <void(T&)> fnc) { std::for_each(this->begin(), this->end(), fnc); }
         template <class T>

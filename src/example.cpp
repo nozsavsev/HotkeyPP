@@ -21,21 +21,56 @@ limitations under the License.
 using namespace HKPP;
 using namespace HKPP::extra;
 
+
+class HotkeyCallbackHandle_ {
+public:
+    HotkeyCallbackHandle_() = default;
+    HotkeyCallbackHandle_(const HotkeyCallbackHandle_& other) : hotkeyId(other.hotkeyId), future(std::move(const_cast<HotkeyCallbackHandle_&>(other).future)) {}
+    HotkeyCallbackHandle_(HotkeyCallbackHandle_&& other) noexcept : hotkeyId(std::exchange(other.hotkeyId, 0)), future(std::move(other.future)) {}
+
+    HotkeyCallbackHandle_(size_t HotkeyId, std::future<void> Future)
+    {
+        hotkeyId = HotkeyId;
+        std::swap(Future, future);
+    }
+
+    HotkeyCallbackHandle_& operator=(HotkeyCallbackHandle_ other) {
+        std::swap(hotkeyId, other.hotkeyId);
+        std::swap(future, other.future);
+        return *this;
+    }
+
+    std::future<void> future;
+    size_t hotkeyId = 0;
+
+    bool operator==(const HotkeyCallbackHandle_& s) const {
+        return hotkeyId == s.hotkeyId;
+    }
+
+    bool operator!=(const HotkeyCallbackHandle_& s) const {
+        return !(*this == s);
+    }
+};
+
+
 int main(int argc, char** argv)
 {
     ///*
+
 
     Manager* mng = HKPP::Manager::GetInstance();
 
     mng->HKPP_Init();
 
     size_t hId = mng->RegisterHotkey(HKPP::Hotkey(
-        { 'C' , 'V'},
+        { 'C' , 'V' },
         [](HotkeyEvent evt) -> void {
+            std::cout << "Hotkey pressed working..." << std::endl;
+            Sleep(10'000);
+            std::cout << "Done" << std::endl;     
 
-            Sleep(10000);
-            std::cout << "Hotkey pressed" << std::endl;
-        },
+
+        },               
         kbd_event_propagation::PROPAGATE,
         HKPP::Hotkey::injection_permission::ALLOW_ALL,
         HKPP::Hotkey::parallel_execution::BLOCK

@@ -42,9 +42,9 @@ namespace HKPP
     {
         Callback(Evt);
 
-        Manager::instance->hotkeys_mutex->lock();
-        Manager::instance->HKPP_CallbackHandles.RemIf([Id](HotkeyCallbackHandle& handle) -> bool { return handle.hotkeyId == Id; });
-        Manager::instance->hotkeys_mutex->unlock();
+        Manager::instance->HKPP_CallbackHandles_mutex->lock();
+        Manager::instance->HKPP_CallbackHandles.RemIf([&](HotkeyCallbackHandle& handle) -> bool { return handle.hotkeyId == Id; });
+        Manager::instance->HKPP_CallbackHandles_mutex->unlock();
     }
 
     Manager* Manager::GetInstance()
@@ -169,10 +169,10 @@ namespace HKPP
             instance->LLKP_AdditionalCallbacks_mutex->unlock();
 
             //*/
-
+            
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-            //std::cout << "Duration: " << duration.count() << "ms" << std::endl;
+            std::cout << "Duration: " << duration.count() << "ms" << std::endl;
 
             return block_input | CallNextHookEx(NULL, nCode, wParam, lParam);
         }

@@ -67,28 +67,36 @@ namespace HKPP
                 return kbd_event_propagation::PROPAGATE;
         }
 
+        std::cout << "checked hotkey" << std::endl;
+
+
+        ///*
         Manager::instance->HKPP_CallbackHandles_mutex->lock();
 
         if (Manager::instance->HKPP_CallbackHandles.Contains([this](HotkeyCallbackHandle& handle) -> bool { return handle.hotkeyId == this->id; }))
             if (this->paralelExecutionPolicy == parallel_execution::BLOCK)
             {
                 Manager::instance->HKPP_CallbackHandles_mutex->unlock();
+                std::cout << "blocked executionf" << std::endl;
+
                 return kbd_event_propagation::PROPAGATE;
             }
 
         Manager::instance->HKPP_CallbackHandles_mutex->unlock();
+        //*/
+
+        std::cout << "allowed execution" << std::endl;
+
 
         HotkeyEvent hk_event(*this, weakestKey);
 
-        HotkeyCallbackHandle handle(
-            this->id,
-            std::async(std::launch::async, &Manager::runUserCallback, hk_event, callback, id)
-        );
-
         Manager::instance->HKPP_CallbackHandles_mutex->lock();
+        HotkeyCallbackHandle handle(id);
         Manager::instance->HKPP_CallbackHandles.push_back(handle);
         Manager::instance->HKPP_CallbackHandles_mutex->unlock();
 
+        std::cout << "starting async" << std::endl;
+        std::async(std::launch::async, &Manager::runUserCallback, hk_event, callback, id);
 
         return this->kbdEventPropagationStatus;
     }

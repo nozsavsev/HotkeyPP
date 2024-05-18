@@ -1,6 +1,4 @@
-.vs
-IDE/vs2019/.vs
-IDE/vs2019/Release
-IDE/vs2019/Debug
-IDE/vs2019/x64
-/IDE/vs2019/Win32
+IDE/vs2022/Win32/
+IDE/vs2022/x64/
+IDE/vs2022/.vs/
+IDE/vs2022/HotKeyPP/
