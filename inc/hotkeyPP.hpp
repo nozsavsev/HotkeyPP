@@ -145,6 +145,8 @@ namespace HKPP
     {
     public:
 
+        void* userdata = nullptr;
+
         enum injection_permission
         {
             ALLOW_ALL = 0,
