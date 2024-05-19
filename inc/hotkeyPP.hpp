@@ -177,7 +177,7 @@ namespace HKPP
             parallel_execution ParalelExecutionPolicy = parallel_execution::BLOCK
         );
 
-        kbd_event_propagation checkAndDispatch(VectorEx <Key>& KeyboardState);
+        kbd_event_propagation checkAndDispatch(VectorEx <Key>& KeyboardState, Key& eventTrigger);
 
         bool operator!= (const Hotkey& s) const;
         bool operator== (const Hotkey& s) const;

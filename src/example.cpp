@@ -37,7 +37,7 @@ int main(int argc, char** argv)
         },
         kbd_event_propagation::PROPAGATE,
         HKPP::Hotkey::injection_permission::ALLOW_ALL,
-        HKPP::Hotkey::parallel_execution::BLOCK
+        HKPP::Hotkey::parallel_execution::ALLOW
     )
     );
 

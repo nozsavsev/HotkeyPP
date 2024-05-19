@@ -1,8 +1,2 @@
 ﻿  example.cpp
-  Hotkey.cpp
-  HotkeyCallbackHandle.cpp
-  Key.cpp
-  Manager.cpp
-C:\Users\nozsa\source\repos\HotkeyPP\src\Manager.cpp(101,25): warning C4553: '==': result of expression not used; did you intend '='?
-  Generating Code...
   HotKeyPP.vcxproj -> C:\Users\nozsa\source\repos\HotkeyPP\IDE\vs2022\x64\Debug\HotKeyPP.exe

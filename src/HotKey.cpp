@@ -44,9 +44,12 @@ namespace HKPP
 
 
 
-    kbd_event_propagation Hotkey::checkAndDispatch(VectorEx <Key>& KState)
+    kbd_event_propagation Hotkey::checkAndDispatch(VectorEx <Key>& KState, Key& eventTrigger)
     {
         injection_status weakestKey = injection_status::REAL;
+
+        if (this->keyList.Contains([eventTrigger](Key& k) -> bool { return k.key == eventTrigger.key; }) == false)
+            return kbd_event_propagation::PROPAGATE;
 
         for (auto& key : this->keyList)
         {
@@ -77,7 +80,9 @@ namespace HKPP
             if (this->paralelExecutionPolicy == parallel_execution::BLOCK)
             {
                 Manager::instance->HKPP_CallbackHandles_mutex->unlock();
-                std::cout << "blocked execution" << std::endl;
+#ifdef _DEBUG 
+                std::cout << "blocked execution" << std::endl; 
+#endif
 
                 return kbd_event_propagation::PROPAGATE;
             }

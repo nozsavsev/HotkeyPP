@@ -31,7 +31,9 @@ namespace HKPP
         {
             auto evt = Manager::callbackQueue.Dequeue();
 
+#ifdef _DEBUG 
             std::cout << "msg received\n";
+#endif
 
             if (evt.hotkeyId == 0)
                 return;
@@ -104,11 +106,20 @@ namespace HKPP
         hook_proc_thid = 0;
     }
 
+#ifdef _DEBUG
+
+    Bencher bnch;
+
+#endif
+
     LRESULT CALLBACK Manager::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
         if (nCode == HC_ACTION)
         {
-            auto start_time = std::chrono::high_resolution_clock::now();
+
+#ifdef _DEBUG
+            bnch.Start();
+#endif
 
             bool repeated_input = false;
             kbd_event_propagation block_input = kbd_event_propagation::PROPAGATE;
@@ -152,10 +163,12 @@ namespace HKPP
             if (repeated_input == false)
                 LocalHotkeyList.Foreach([&](Hotkey& hotkey) -> void
                     {
-                        if (hotkey.checkAndDispatch(LocalKeyboardState) == kbd_event_propagation::BLOCK)
+                        if (hotkey.checkAndDispatch(LocalKeyboardState, key_desk) == kbd_event_propagation::BLOCK)
                         {
                             block_input = kbd_event_propagation::BLOCK;
+#ifdef _DEBUG 
                             std::cout << "Propagation blocked by one of hotkeys" << std::endl;
+#endif
                         }
                     });
 
@@ -165,14 +178,16 @@ namespace HKPP
                     if (dsk.callbackFunction(nCode, wParam, lParam, LocalKeyboardState, repeated_input) == kbd_event_propagation::BLOCK)
                     {
                         block_input = kbd_event_propagation::BLOCK;
+#ifdef _DEBUG 
                         std::cout << "Propagation blocked by one of callbacks" << std::endl;
+#endif
                     }
                 });
             instance->LLKP_AdditionalCallbacks_mutex->unlock();
 
-            auto end_time = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            std::cout << "Duration: " << duration.count() << "micro sec" << std::endl;
+#ifdef _DEBUG
+            bnch.Stop();
+#endif
 
             return block_input | CallNextHookEx(NULL, nCode, wParam, lParam);
         }
