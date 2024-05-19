@@ -1,4 +1,1 @@
-﻿  Manager.cpp
-C:\Users\nozsa\source\repos\HotkeyPP-master\src\Manager.cpp(81,25): warning C4553: '==': result of expression not used; did you intend '='?
-C:\Users\nozsa\source\repos\HotkeyPP-master\inc\hotkeyPP.h(311,71): warning C4858: discarding return value: The 'remove' and 'remove_if' algorithms return the iterator past the last element that should be kept. You need to call container.erase(result, container.end()) afterwards. In C++20, 'std::erase' and 'std::erase_if' are simpler replacements for these two steps.
-  HotKeyPP.vcxproj -> C:\Users\nozsa\source\repos\HotkeyPP-master\IDE\vs2022\x64\Debug\HotKeyPP.exe
+﻿

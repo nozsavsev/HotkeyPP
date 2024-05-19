@@ -14,11 +14,13 @@
     <ClCompile Include="..\..\src\Manager.cpp" />
     <ClCompile Include="..\..\src\Key.cpp" />
     <ClCompile Include="..\..\src\example.cpp" />
+    <ClCompile Include="Bencher.cpp" />
     <ClCompile Include="Hotkey.cpp" />
+    <ClCompile Include="HotkeyCallbackHandle.cpp" />
     <ClCompile Include="HotkeyEvent.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\hotkeyPP.h" />
+    <ClInclude Include="..\..\inc\hotkeyPP.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -35,7 +37,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>

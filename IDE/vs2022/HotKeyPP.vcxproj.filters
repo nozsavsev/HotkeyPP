@@ -30,9 +30,15 @@
     <ClCompile Include="HotkeyEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Bencher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HotkeyCallbackHandle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\hotkeyPP.h">
+    <ClInclude Include="..\..\inc\hotkeyPP.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

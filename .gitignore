@@ -1,4 +1,4 @@
-IDE/vs2022/Win32/
-IDE/vs2022/x64/
-IDE/vs2022/.vs/
-IDE/vs2022/HotKeyPP/
+IDE/vs2022/.vs/**
+IDE/vs2022/x64/**
+IDE/vs2022/Win32/**
+IDE/vs2022/HotKeyPP/**

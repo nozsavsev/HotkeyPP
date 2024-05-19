@@ -12,17 +12,46 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#include "hotkeyPP.h"
+#include "hotkeyPP.hpp"
 
 using namespace HKPP::extra;
 
 
 namespace HKPP
 {
-
     Manager* Manager::instance;
 
     std::atomic<DWORD>* Manager::hook_proc_thid;
+
+    ThreadSafeQueue<HotkeyCallbackHandle> Manager::callbackQueue;
+
+    void Manager::RunCallbacksThread()
+    {
+        while (true)
+        {
+            auto evt = Manager::callbackQueue.Dequeue();
+
+            std::cout << "msg received\n";
+
+            if (evt.hotkeyId == 0)
+                return;
+
+            std::thread([](HotkeyEvent hotkeyEvent, std::function <void(HotkeyEvent)> Callback, size_t HotkeyId) -> void {
+
+                Callback(hotkeyEvent);
+
+                if (Manager::instance->HKPP_CallbackHandles_mutex != nullptr)
+                {
+                    Manager::instance->HKPP_CallbackHandles_mutex->lock();
+                    Manager::instance->HKPP_CallbackHandles.RemIf([HotkeyId](HotkeyCallbackHandle& handle) -> bool { return handle.hotkeyId == HotkeyId; });
+                    Manager::instance->HKPP_CallbackHandles_mutex->unlock();
+                }
+
+                }, evt.hotkeyEvent, evt.callback, evt.hotkeyId)
+                .detach();
+
+        }
+    }
 
     VectorEx<Key> Manager::GetKeyboardState()
     {
@@ -36,15 +65,6 @@ namespace HKPP
     Manager::Manager()
     {
         this->HKPP_Init();
-    }
-
-    void Manager::runUserCallback(HotkeyEvent Evt, std::function <void(HotkeyEvent)> Callback, size_t Id)
-    {
-        Callback(Evt);
-
-        Manager::instance->HKPP_CallbackHandles_mutex->lock();
-        Manager::instance->HKPP_CallbackHandles.RemIf([&](HotkeyCallbackHandle& handle) -> bool { return handle.hotkeyId == Id; });
-        Manager::instance->HKPP_CallbackHandles_mutex->unlock();
     }
 
     Manager* Manager::GetInstance()
@@ -88,18 +108,15 @@ namespace HKPP
     {
         if (nCode == HC_ACTION)
         {
-
-            //get millisecond timestamp
             auto start_time = std::chrono::high_resolution_clock::now();
 
             bool repeated_input = false;
             kbd_event_propagation block_input = kbd_event_propagation::PROPAGATE;
 
-            ///*
             instance->hotkeys_mutex->lock();
             VectorEx <Hotkey> LocalHotkeyList = instance->hotkeys;
             instance->hotkeys_mutex->unlock();
-            
+
             instance->keyboardState_mutex->lock();
 
             KBDLLHOOKSTRUCT* kbd = (KBDLLHOOKSTRUCT*)lParam;
@@ -132,21 +149,6 @@ namespace HKPP
 
             instance->keyboardState_mutex->unlock();
 
-            if (!repeated_input && false)
-            {
-
-                std::cout << "\033[1;1H";
-                for (int i = 4; i-- > 0; std::cout << "\033[2K\n");
-                std::cout << "\033[1;1H";
-
-                for (const auto& key : LocalKeyboardState)
-                {
-                    std::cout << "[ " << key.key << " ] ";
-                }
-
-            }
-
-
             if (repeated_input == false)
                 LocalHotkeyList.Foreach([&](Hotkey& hotkey) -> void
                     {
@@ -168,11 +170,9 @@ namespace HKPP
                 });
             instance->LLKP_AdditionalCallbacks_mutex->unlock();
 
-            //*/
-            
             auto end_time = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-            std::cout << "Duration: " << duration.count() << "ms" << std::endl;
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            std::cout << "Duration: " << duration.count() << "micro sec" << std::endl;
 
             return block_input | CallNextHookEx(NULL, nCode, wParam, lParam);
         }
@@ -200,17 +200,51 @@ namespace HKPP
         if (hook_main_thread == nullptr)
             hook_main_thread = new std::thread(&hook_main);
 
+        if (callback_thread == nullptr)
+            callback_thread = new std::thread(&RunCallbacksThread);
+
         while (hook_proc_thid->load() == 0) Sleep(10);
     }
 
+    /* unused
     void Manager::HKPP_Stop()
     {
         PostThreadMessageW(*hook_proc_thid, WM_QUIT, (WPARAM)NULL, (LPARAM)NULL);
         while (hook_proc_thid->load() != 0) Sleep(10);
 
+        Hotkey fooHotkey({ 'F','O','O' });
+        HotkeyEvent foohkevt(fooHotkey, injection_status::INJECTED);
+        callbackQueue.Enqueue(HotkeyCallbackHandle((size_t)1, foohkevt, [](HotkeyEvent) -> void {}));
+
+        callback_thread->join();
+
+        delete callback_thread;
+        callback_thread = nullptr;
+
+        delete hook_main_thread;
+        hook_main_thread = nullptr;
+
+        delete hotkeys_mutex;
+        hotkeys_mutex = nullptr;
+
+        delete keyboardState_mutex;
+        keyboardState_mutex = nullptr;
+
+        delete HKPP_CallbackHandles_mutex;
+        HKPP_CallbackHandles_mutex = nullptr;
+
+        delete LLKP_AdditionalCallbacks_mutex;
+        LLKP_AdditionalCallbacks_mutex = nullptr;
+
+        delete hook_proc_thid;
+        hook_proc_thid = nullptr;
+
+        HKPP_CallbackHandles.clear();
+
         UnregisterAllHotkeys();
         UnregisterAllCallbacks();
     }
+    //*/
 
     size_t Manager::getNewHotkeyId() { return hotkeyIdAutoincrement++; }
     size_t Manager::getNewCallbackId() { return callbackIdAutoincrement++; }
@@ -248,7 +282,7 @@ namespace HKPP
 
     size_t Manager::RegisterHotkey(Hotkey desk)
     {
-        size_t uuid = 0;
+        size_t uuid = this->getNewHotkeyId();
 
         hotkeys_mutex->lock();
         if (!hotkeys.Contains(desk))
