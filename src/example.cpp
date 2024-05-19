@@ -20,14 +20,6 @@ limitations under the License.
 using namespace HKPP;
 using namespace HKPP::extra;
 
-
-void A()
-{
-    Sleep(5'000);
-}
-
-
-
 int main(int argc, char** argv)
 {
 
@@ -52,7 +44,6 @@ int main(int argc, char** argv)
     while (1) Sleep(10);
 
     mng->UnregisterHotkey(hId);
-    mng->HKPP_Stop();
 
     return 0;
 }

@@ -11,16 +11,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Manager.cpp" />
-    <ClCompile Include="..\..\src\Key.cpp" />
-    <ClCompile Include="..\..\src\example.cpp" />
-    <ClCompile Include="Bencher.cpp" />
-    <ClCompile Include="Hotkey.cpp" />
-    <ClCompile Include="HotkeyCallbackHandle.cpp" />
-    <ClCompile Include="HotkeyEvent.cpp" />
+    <ClInclude Include="..\..\inc\hotkeyPP.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\hotkeyPP.hpp" />
+    <ClCompile Include="..\..\src\Bencher.cpp" />
+    <ClCompile Include="..\..\src\example.cpp" />
+    <ClCompile Include="..\..\src\Hotkey.cpp" />
+    <ClCompile Include="..\..\src\HotkeyCallbackHandle.cpp" />
+    <ClCompile Include="..\..\src\HotkeyEvent.cpp" />
+    <ClCompile Include="..\..\src\Key.cpp" />
+    <ClCompile Include="..\..\src\Manager.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
